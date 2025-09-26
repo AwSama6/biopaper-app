@@ -20,11 +20,7 @@ async function getSession() {
 }
 
 export default async function DashboardPage() {
-  const session = await getSession()
-  
-  if (!session?.user) {
-    redirect('/login')
-  }
-
-  return <DashboardClient user={session.user} />
+  // 暂时允许所有用户访问dashboard，让客户端组件处理认证
+  // 这样可以支持localStorage中的用户信息
+  return <DashboardClient />
 }

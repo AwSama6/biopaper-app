@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { ChatInterface } from '@/components/chat/ChatInterface'
-import { signOut } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 
 interface User {
   id?: string
@@ -18,18 +18,33 @@ interface Conversation {
   updatedAt: string
 }
 
-interface DashboardClientProps {
-  user: User
-}
-
-export function DashboardClient({ user }: DashboardClientProps) {
+export function DashboardClient() {
+  const [user, setUser] = useState<User | null>(null)
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const router = useRouter()
 
   useEffect(() => {
+    // 从localStorage获取用户信息
+    const userData = localStorage.getItem('user')
+    if (userData) {
+      try {
+        setUser(JSON.parse(userData))
+      } catch (error) {
+        console.error('解析用户数据失败:', error)
+        // 如果解析失败，重定向到登录页
+        router.push('/login')
+        return
+      }
+    } else {
+      // 如果没有用户信息，重定向到登录页
+      router.push('/login')
+      return
+    }
+    
     loadConversations()
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [router]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadConversations = async () => {
     try {
@@ -70,7 +85,7 @@ export function DashboardClient({ user }: DashboardClientProps) {
     }
   }
 
-  if (isLoading) {
+  if (isLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
@@ -100,7 +115,13 @@ export function DashboardClient({ user }: DashboardClientProps) {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => signOut()}
+              onClick={() => {
+                // 清除localStorage中的用户数据
+                localStorage.removeItem('user')
+                localStorage.removeItem('tokens')
+                // 重定向到首页
+                router.push('/')
+              }}
               className="text-gray-500 hover:text-gray-700"
             >
               退出
