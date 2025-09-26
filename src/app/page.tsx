@@ -2,13 +2,10 @@ import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import UserProfile from '@/components/UserProfile'
 
 export default async function HomePage() {
-  const session = await auth()
-  
-  if (session?.user) {
-    redirect('/dashboard')
-  }
+  // 不再自动重定向，让客户端组件处理用户状态
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
@@ -22,9 +19,7 @@ export default async function HomePage() {
                 生物论文学习助手
               </h1>
             </div>
-            <Link href="/login">
-              <Button>登录</Button>
-            </Link>
+            <UserProfile />
           </div>
         </div>
       </nav>
@@ -42,7 +37,7 @@ export default async function HomePage() {
             通过智能解析和知识卡片，帮助学生从细胞生物学基础走向医学研究前沿
           </p>
           <div className="flex justify-center space-x-4">
-            <Link href="/login">
+            <Link href="/dashboard">
               <Button size="lg" className="px-8 py-3">
                 开始学习
               </Button>
