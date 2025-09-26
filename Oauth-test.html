@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OAuth 测试客户端</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .section {
+            margin-bottom: 40px;
+            padding: 30px;
+            border: 2px solid #f1f5f9;
+            border-radius: 8px;
+            background: #fafbfc;
+        }
+        
+        .section h2 {
+            color: #1e293b;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .section h2::before {
+            content: "";
+            font-size: 1.2rem;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        input, textarea, select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(79, 70, 229, 0.3);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-secondary {
+            background: #6b7280;
+        }
+        
+        .btn-success {
+            background: #10b981;
+        }
+        
+        .btn-danger {
+            background: #ef4444;
+        }
+        
+        .status {
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+            font-weight: 500;
+        }
+        
+        .status.success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+        
+        .status.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+        
+        .status.info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #93c5fd;
+        }
+        
+        .code-block {
+            background: #1f2937;
+            color: #f9fafb;
+            padding: 20px;
+            border-radius: 6px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 13px;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        
+        .step {
+            display: flex;
+            align-items: center;
+            margin: 15px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 6px;
+            border-left: 4px solid #4f46e5;
+        }
+        
+        .step-number {
+            background: #4f46e5;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+        
+        .step-content {
+            flex: 1;
+        }
+        
+        .step-title {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 5px;
+        }
+        
+        .step-desc {
+            color: #6b7280;
+            font-size: 14px;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .token-info {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .token-info h3 {
+            color: #1e293b;
+            margin-bottom: 15px;
+        }
+        
+        .token-field {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .token-field:last-child {
+            border-bottom: none;
+        }
+        
+        .token-label {
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .token-value {
+            font-family: monospace;
+            background: #f1f5f9;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>OAuth 测试客户端</h1>
+            <p>模拟外部服务使用预授权密钥进行OAuth集成</p>
+        </div>
+        
+        <div class="content">
+            <!-- 配置区域 -->
+            <div class="section">
+                <h2>OAuth 配置</h2>
+                <div class="form-group">
+                    <label for="apiBase">OAuth 服务基址（例如：https://www.opensii.ai）</label>
+                    <input type="text" id="apiBase" value="" placeholder="为空则默认 https://www.opensii.ai">
+                </div>
+                <div class="form-group">
+                    <label for="preauthKey">预授权密钥</label>
+                    <input type="text" id="preauthKey" value="g4F5JRVre3Zgc7ZmLG4rK7J7pdtmiajc" placeholder="输入你的预授权密钥">
+                </div>
+                
+                <div class="form-group">
+                    <label for="clientName">客户端名称</label>
+                    <input type="text" id="clientName" value="测试应用" placeholder="你的应用名称">
+                </div>
+                
+                <div class="form-group">
+                    <label for="clientDescription">客户端描述</label>
+                    <textarea id="clientDescription" rows="3" placeholder="描述你的应用用途">用于测试OAuth集成的演示应用</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="redirectUri">重定向URI</label>
+                    <input type="text" id="redirectUri" value="" placeholder="授权后的回调地址（默认当前页面）">
+                </div>
+                
+                <div class="form-group">
+                    <label>使用已有客户端（可选）</label>
+                    <div style="display:flex; gap:10px; flex-wrap: wrap;">
+                        <input type="text" id="existingClientId" placeholder="已有 client_id" style="flex:1 1 260px;">
+                        <input type="text" id="existingClientSecret" placeholder="已有 client_secret" style="flex:1 1 260px;">
+                        <button class="btn btn-secondary" onclick="useExistingClient()">使用已有客户端</button>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="scopes">授权范围</label>
+                    <select id="scopes" multiple>
+                        <option value="read" selected>读取权限 (read)</option>
+                        <option value="write">写入权限 (write)</option>
+                        <option value="admin">管理权限 (admin)</option>
+                    </select>
+                </div>
+                
+                <button class="btn" onclick="registerClient()">1. 注册OAuth客户端</button>
+                <button class="btn btn-secondary" onclick="clearStatus()">清除状态</button>
+            </div>
+            
+            <!-- 状态显示 -->
+            <div id="statusArea"></div>
+            
+            <!-- 客户端信息 -->
+            <div id="clientInfo" class="section hidden">
+                <h2>客户端信息</h2>
+                <div class="token-info">
+                    <h3>注册成功的客户端</h3>
+                    <div class="token-field">
+                        <span class="token-label">客户端ID:</span>
+                        <span class="token-value" id="clientId">-</span>
+                    </div>
+                    <div class="token-field">
+                        <span class="token-label">客户端密钥:</span>
+                        <span class="token-value" id="clientSecret">-</span>
+                    </div>
+                    <div class="token-field">
+                        <span class="token-label">客户端名称:</span>
+                        <span class="token-value" id="clientNameDisplay">-</span>
+                    </div>
+                </div>
+                
+                <button class="btn btn-success" onclick="startOAuthFlow()">2. 开始OAuth授权流程</button>
+            </div>
+            
+            <!-- OAuth流程 -->
+            <div id="oauthFlow" class="section hidden">
+                <h2>OAuth 授权流程</h2>
+                
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <div class="step-title">生成授权URL</div>
+                        <div class="step-desc">构建包含客户端信息的授权链接</div>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <div class="step-title">用户授权</div>
+                        <div class="step-desc">用户在新窗口中确认授权</div>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <div class="step-title">获取访问令牌</div>
+                        <div class="step-desc">使用授权码交换访问令牌</div>
+                    </div>
+                </div>
+                
+                <button class="btn" onclick="generateAuthUrl()">生成授权URL</button>
+                <button class="btn btn-success" onclick="openAuthWindow()">打开授权窗口</button>
+                <button class="btn btn-secondary" onclick="checkCallback()">检查回调</button>
+            </div>
+            
+            <!-- 令牌信息 -->
+            <div id="tokenInfo" class="section hidden">
+                <h2>访问令牌信息</h2>
+                <div class="token-info">
+                    <h3>获取到的令牌</h3>
+                    <div class="token-field">
+                        <span class="token-label">访问令牌:</span>
+                        <span class="token-value" id="accessToken">-</span>
+                    </div>
+                    <div class="token-field">
+                        <span class="token-label">刷新令牌:</span>
+                        <span class="token-value" id="refreshToken">-</span>
+                    </div>
+                    <div class="token-field">
+                        <span class="token-label">令牌类型:</span>
+                        <span class="token-value" id="tokenType">-</span>
+                    </div>
+                    <div class="token-field">
+                        <span class="token-label">过期时间:</span>
+                        <span class="token-value" id="expiresIn">-</span>
+                    </div>
+                </div>
+                
+                <button class="btn" onclick="getUserInfo()">获取用户信息</button>
+                <button class="btn" onclick="verifyToken()">验证 /auth/me</button>
+                <button class="btn btn-danger" onclick="revokeToken()">撤销令牌</button>
+            </div>
+            
+            <!-- 用户信息 -->
+            <div id="userInfo" class="section hidden">
+                <h2>用户信息</h2>
+                <div class="token-info">
+                    <h3>用户详细信息</h3>
+                    <div id="userInfoContent">
+                        <!-- 用户信息将在这里显示 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let clientData = null;
+        let authUrl = null;
+        let tokenData = null;
+        
+        // API基础URL
+        function getApiBase() {
+            const el = document.getElementById('apiBase');
+            const v = el && el.value ? el.value.trim() : '';
+            return v || 'https://www.opensii.ai';
+        }
+        
+        // 显示状态消息
+        function showStatus(message, type = 'info') {
+            const statusArea = document.getElementById('statusArea');
+            statusArea.innerHTML = `
+                <div class="status ${type}">
+                    <strong>[${type.toUpperCase()}]</strong> ${message}
+                </div>
+            `;
+        }
+        
+        // 清除状态
+        function clearStatus() {
+            document.getElementById('statusArea').innerHTML = '';
+            document.getElementById('clientInfo').classList.add('hidden');
+            document.getElementById('oauthFlow').classList.add('hidden');
+            document.getElementById('tokenInfo').classList.add('hidden');
+            document.getElementById('userInfo').classList.add('hidden');
+            clientData = null;
+            authUrl = null;
+            tokenData = null;
+        }
+        
+        // 注册OAuth客户端
+        async function registerClient() {
+            const preauthKey = document.getElementById('preauthKey').value.trim();
+            const clientName = document.getElementById('clientName').value.trim();
+            const clientDescription = document.getElementById('clientDescription').value.trim();
+            const redirectUri = document.getElementById('redirectUri').value.trim();
+            const scopes = Array.from(document.getElementById('scopes').selectedOptions).map(option => option.value);
+            
+            if (!preauthKey || !clientName || !redirectUri) {
+                showStatus('请填写所有必填字段', 'error');
+                return;
+            }
+            
+            showStatus('正在注册OAuth客户端...', 'info');
+            
+            try {
+                const response = await fetch(`${getApiBase()}/auth/oauth/clients`, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        client_name: clientName,
+                        client_description: clientDescription,
+                        redirect_uris: [redirectUri],
+                        scopes: scopes,
+                        preauth_key: preauthKey
+                    })
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || '注册失败');
+                }
+                
+                clientData = await response.json();
+                
+                // 显示客户端信息
+                document.getElementById('clientId').textContent = clientData.client_id;
+                document.getElementById('clientSecret').textContent = clientData.client_secret;
+                document.getElementById('clientNameDisplay').textContent = clientData.client_name;
+                document.getElementById('clientInfo').classList.remove('hidden');
+                
+                showStatus(`OAuth客户端注册成功！客户端ID: ${clientData.client_id}`, 'success');
+                
+            } catch (error) {
+                showStatus(`注册失败: ${error.message}`, 'error');
+                console.error('注册错误:', error);
+            }
+        }
+
+        // 使用已有 client_id/secret
+        function useExistingClient() {
+            const id = document.getElementById('existingClientId').value.trim();
+            const secret = document.getElementById('existingClientSecret').value.trim();
+            if (!id || !secret) {
+                showStatus('请填写已有的 client_id 与 client_secret', 'error');
+                return;
+            }
+            clientData = {
+                client_id: id,
+                client_secret: secret,
+                client_name: '已有客户端'
+            };
+            document.getElementById('clientId').textContent = clientData.client_id;
+            document.getElementById('clientSecret').textContent = clientData.client_secret;
+            document.getElementById('clientNameDisplay').textContent = clientData.client_name;
+            document.getElementById('clientInfo').classList.remove('hidden');
+            showStatus('已加载已有客户端凭据', 'success');
+        }
+        
+        // 开始OAuth流程
+        function startOAuthFlow() {
+            if (!clientData) {
+                showStatus('请先注册OAuth客户端', 'error');
+                return;
+            }
+            
+            document.getElementById('oauthFlow').classList.remove('hidden');
+            showStatus('OAuth流程已准备就绪，请生成授权URL', 'info');
+        }
+        
+        // 生成授权URL
+        function generateAuthUrl() {
+            if (!clientData) {
+                showStatus('请先注册OAuth客户端', 'error');
+                return;
+            }
+            
+            const redirectUri = document.getElementById('redirectUri').value.trim();
+            const scopes = Array.from(document.getElementById('scopes').selectedOptions).map(option => option.value);
+            
+            const params = new URLSearchParams({
+                response_type: 'code',
+                client_id: clientData.client_id,
+                redirect_uri: redirectUri,
+                scope: scopes.join(' '),
+                state: 'test_state_' + Date.now()
+            });
+            
+            authUrl = `${getApiBase()}/auth/oauth/authorize?${params.toString()}`;
+            
+            showStatus('授权URL已生成，可以打开授权窗口了', 'success');
+            
+            // 显示授权URL
+            const codeBlock = document.createElement('div');
+            codeBlock.className = 'code-block';
+            codeBlock.textContent = authUrl;
+            document.getElementById('oauthFlow').appendChild(codeBlock);
+        }
+        
+        // 打开授权窗口
+        function openAuthWindow() {
+            if (!authUrl) {
+                showStatus('请先生成授权URL', 'error');
+                return;
+            }
+            
+            const popup = window.open(
+                authUrl,
+                'oauth_authorize',
+                'width=600,height=700,scrollbars=yes,resizable=yes'
+            );
+            
+            if (!popup) {
+                showStatus('无法打开弹窗，请检查浏览器弹窗设置', 'error');
+                return;
+            }
+            
+            showStatus('授权窗口已打开，请在弹窗中完成授权', 'info');
+            
+            // 监听弹窗关闭
+            const checkClosed = setInterval(() => {
+                if (popup.closed) {
+                    clearInterval(checkClosed);
+                    showStatus('授权窗口已关闭，请检查回调结果', 'info');
+                }
+            }, 1000);
+        }
+        
+        // 检查回调（模拟）
+        function checkCallback() {
+            showStatus('请在实际应用中处理授权回调，这里仅作演示', 'info');
+            
+            // 模拟获取到授权码
+            const mockAuthCode = 'mock_auth_code_' + Date.now();
+            exchangeCodeForToken(mockAuthCode);
+        }
+        
+        // 使用授权码交换访问令牌
+        async function exchangeCodeForToken(authCode) {
+            if (!clientData) {
+                showStatus('请先注册OAuth客户端', 'error');
+                return;
+            }
+            
+            showStatus('正在交换访问令牌...', 'info');
+            
+            try {
+                const response = await fetch(`${getApiBase()}/auth/oauth/token`, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'Accept': 'application/json',
+                    },
+                    body: new URLSearchParams({
+                        grant_type: 'authorization_code',
+                        code: authCode,
+                        client_id: clientData.client_id,
+                        client_secret: clientData.client_secret,
+                        redirect_uri: document.getElementById('redirectUri').value.trim()
+                    })
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || '令牌交换失败');
+                }
+                
+                tokenData = await response.json();
+                
+                // 显示令牌信息
+                document.getElementById('accessToken').textContent = tokenData.access_token;
+                document.getElementById('refreshToken').textContent = tokenData.refresh_token || '无';
+                document.getElementById('tokenType').textContent = tokenData.token_type;
+                document.getElementById('expiresIn').textContent = tokenData.expires_in + ' 秒';
+                document.getElementById('tokenInfo').classList.remove('hidden');
+                
+                showStatus('访问令牌获取成功！', 'success');
+                
+            } catch (error) {
+                showStatus(`令牌交换失败: ${error.message}`, 'error');
+                console.error('令牌交换错误:', error);
+            }
+        }
+
+        // 验证token是否可用：调用 /auth/oauth/userinfo
+        async function verifyToken() {
+            if (!tokenData) {
+                showStatus('请先获取访问令牌', 'error');
+                return;
+            }
+            showStatus('正在验证访问令牌 (/auth/oauth/userinfo)...', 'info');
+            try {
+                const resp = await fetch(`${getApiBase()}/auth/oauth/userinfo`, {
+                    method: 'GET',
+                    mode: 'cors',
+                    headers: {
+                        'Authorization': `Bearer ${tokenData.access_token}`,
+                        'Accept': 'application/json',
+                    }
+                });
+                if (!resp.ok) {
+                    const err = await resp.json().catch(() => ({}));
+                    throw new Error(err.detail || `验证失败: ${resp.status}`);
+                }
+                const me = await resp.json();
+                showStatus(`Token有效，用户: ${me.username || me._id || '未知'}`, 'success');
+            } catch (error) {
+                showStatus(`验证失败: ${error.message}`, 'error');
+                console.error('验证token错误:', error);
+            }
+        }
+        
+        // 获取用户信息
+        async function getUserInfo() {
+            if (!tokenData) {
+                showStatus('请先获取访问令牌', 'error');
+                return;
+            }
+            
+            showStatus('正在获取用户信息...', 'info');
+            
+            try {
+                const response = await fetch(`${getApiBase()}/auth/oauth/userinfo`, {
+                    method: 'GET',
+                    mode: 'cors',
+                    headers: {
+                        'Authorization': `Bearer ${tokenData.access_token}`,
+                        'Accept': 'application/json',
+                    }
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || '获取用户信息失败');
+                }
+                
+                const userInfo = await response.json();
+                
+                // 显示用户信息
+                const userInfoContent = document.getElementById('userInfoContent');
+                userInfoContent.innerHTML = Object.entries(userInfo)
+                    .map(([key, value]) => `
+                        <div class="token-field">
+                            <span class="token-label">${key}:</span>
+                            <span class="token-value">${value}</span>
+                        </div>
+                    `).join('');
+                
+                document.getElementById('userInfo').classList.remove('hidden');
+                showStatus('用户信息获取成功！', 'success');
+                
+            } catch (error) {
+                showStatus(`获取用户信息失败: ${error.message}`, 'error');
+                console.error('获取用户信息错误:', error);
+            }
+        }
+        
+        // 撤销令牌
+        async function revokeToken() {
+            if (!tokenData) {
+                showStatus('请先获取访问令牌', 'error');
+                return;
+            }
+            
+            showStatus('正在撤销访问令牌...', 'info');
+            
+            try {
+                const response = await fetch(`${getApiBase()}/auth/oauth/revoke`, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'Accept': 'application/json',
+                    },
+                    body: new URLSearchParams({
+                        token: tokenData.access_token,
+                        client_id: clientData.client_id,
+                        client_secret: clientData.client_secret
+                    })
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || '撤销令牌失败');
+                }
+                
+                showStatus('访问令牌已成功撤销！', 'success');
+                
+                // 清除令牌信息
+                tokenData = null;
+                document.getElementById('tokenInfo').classList.add('hidden');
+                document.getElementById('userInfo').classList.add('hidden');
+                
+            } catch (error) {
+                showStatus(`撤销令牌失败: ${error.message}`, 'error');
+                console.error('撤销令牌错误:', error);
+            }
+        }
+        
+        // 处理来自授权弹窗的回传
+        let popupHandled = false;
+        async function handleAuthorizePopupMessage(event) {
+            let apiOrigin = '';
+            try { apiOrigin = new URL(getApiBase()).origin; } catch (_) {}
+            const allowedOrigins = [apiOrigin];
+            if (!allowedOrigins.includes(event.origin)) return;
+            const data = event.data || {};
+            if (data.type !== 'oauth_authorize_result') return;
+            if (popupHandled) {
+                // 防止重复处理导致授权码被二次使用
+                return;
+            }
+            popupHandled = true;
+            if (data.error) {
+                showStatus(`授权失败: ${data.error_description || data.error}`, 'error');
+                return;
+            }
+            if (data.code) {
+                showStatus('已收到授权码，开始交换访问令牌...', 'info');
+                try {
+                    await exchangeCodeForToken(data.code);
+                    await verifyToken();
+                } catch (e) {
+                    // 错误已在各自函数内处理
+                }
+            }
+        }
+
+        // 页面加载完成后的初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            showStatus('OAuth测试客户端已准备就绪，请配置参数并开始测试', 'info');
+            window.addEventListener('message', handleAuthorizePopupMessage);
+            // 默认回调地址为当前页面
+            const r = document.getElementById('redirectUri');
+            if (r && !r.value) { r.value = window.location.origin + window.location.pathname; }
+        });
+    </script>
+</body>
+</html>

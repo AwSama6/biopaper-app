@@ -70,6 +70,7 @@ export async function GET() {
   return NextResponse.json({
     oauth_base_url: baseUrl,
     redirect_uri: redirectUri,
+    client_id: process.env.DEEPCOGNITION_CLIENT_ID,
     has_client_id: !!process.env.DEEPCOGNITION_CLIENT_ID,
     has_client_secret: !!process.env.DEEPCOGNITION_CLIENT_SECRET,
     has_preauth_key: !!process.env.DEEPCOGNITION_PREAUTH_KEY
