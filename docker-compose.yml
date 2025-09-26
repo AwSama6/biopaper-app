@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - NEXTAUTH_URL=${NEXTAUTH_URL}
+      - DEEPCOGNITION_CLIENT_ID=${DEEPCOGNITION_CLIENT_ID}
+      - DEEPCOGNITION_CLIENT_SECRET=${DEEPCOGNITION_CLIENT_SECRET}
+      - MONGODB_URI=${MONGODB_URI}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+    depends_on:
+      - mongodb
+    networks:
+      - biopaper-network
+
+  mongodb:
+    image: mongo:7
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_DATABASE: biopaper
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - biopaper-network
+
+volumes:
+  mongodb_data:
+
+networks:
+  biopaper-network:
+    driver: bridge
