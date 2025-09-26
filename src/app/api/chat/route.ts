@@ -5,10 +5,28 @@ import { openRouterClient } from '@/lib/openrouter'
 import { EDUCATION_BIO_PROMPT } from '@/lib/education-prompt'
 import { ObjectId } from 'mongodb'
 
+// 从请求头中获取用户信息
+function getUserFromRequest(request: NextRequest) {
+  const userId = request.headers.get('x-user-id')
+  const userName = request.headers.get('x-user-name')
+  const userEmail = request.headers.get('x-user-email')
+  
+  if (userId && userName) {
+    return {
+      id: userId,
+      name: userName,
+      email: userEmail
+    }
+  }
+  return null
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth()
-    if (!session?.user) {
+    // 直接从请求头获取用户信息
+    const user = getUserFromRequest(request)
+    
+    if (!user) {
       return new Response('Unauthorized', { status: 401 })
     }
 
@@ -52,8 +70,8 @@ export async function POST(request: NextRequest) {
                 const data = line.slice(6)
                 if (data === '[DONE]') {
                   // 保存对话到数据库
-                  if (session.user?.id) {
-                    await saveConversation(session.user.id, conversationId, messages, fullResponse)
+                  if (user.id) {
+                    await saveConversation(user.id, conversationId, messages, fullResponse)
                   }
                   controller.close()
                   return
@@ -111,7 +129,14 @@ async function saveConversation(
       }
     ]
     
-    await conversations.updateOne(
+    console.log('保存对话到数据库:', {
+      userId,
+      conversationId,
+      messageCount: allMessages.length,
+      lastMessage: allMessages[allMessages.length - 1]
+    })
+    
+    const result = await conversations.updateOne(
       { 
         _id: new ObjectId(conversationId),
         userId 
@@ -125,6 +150,8 @@ async function saveConversation(
       },
       { upsert: true }
     )
+    
+    console.log('数据库保存结果:', result)
   } catch (error) {
     console.error('Failed to save conversation:', error)
   }

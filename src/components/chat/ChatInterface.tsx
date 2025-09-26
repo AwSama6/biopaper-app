@@ -11,6 +11,12 @@ interface Message {
   timestamp: Date
 }
 
+interface User {
+  id?: string
+  name?: string | null
+  email?: string | null
+}
+
 interface ChatInterfaceProps {
   conversationId: string
 }
@@ -20,7 +26,61 @@ export function ChatInterface({ conversationId }: ChatInterfaceProps) {
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [, setPdfText] = useState('')
+  const [user, setUser] = useState<User | null>(null)
+  const [isLoadingMessages, setIsLoadingMessages] = useState(true)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    // 从localStorage获取用户信息
+    const userData = localStorage.getItem('user')
+    if (userData) {
+      try {
+        const parsedUser = JSON.parse(userData)
+        setUser(parsedUser)
+        // 用户信息设置后，如果有conversationId就加载消息
+        if (conversationId) {
+          loadMessages(parsedUser)
+        }
+      } catch (error) {
+        console.error('解析用户数据失败:', error)
+      }
+    }
+  }, [conversationId])
+
+  // 当conversationId变化时，加载对应的消息
+  useEffect(() => {
+    if (conversationId && user) {
+      loadMessages()
+    }
+  }, [conversationId, user])
+
+  const loadMessages = async (userToLoad?: User) => {
+    const targetUser = userToLoad || user
+    if (!conversationId || !targetUser) return
+    
+    setIsLoadingMessages(true)
+    try {
+      const headers: HeadersInit = {
+        'x-user-id': targetUser.id || '',
+        'x-user-name': targetUser.name || '',
+        'x-user-email': targetUser.email || ''
+      }
+      
+      const response = await fetch(`/api/conversations/${conversationId}/messages`, { headers })
+      if (response.ok) {
+        const data = await response.json()
+        setMessages(data.messages || [])
+      } else {
+        console.error('Failed to load messages:', response.status, response.statusText)
+        setMessages([])
+      }
+    } catch (error) {
+      console.error('Failed to load messages:', error)
+      setMessages([])
+    } finally {
+      setIsLoadingMessages(false)
+    }
+  }
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -45,11 +105,19 @@ export function ChatInterface({ conversationId }: ChatInterfaceProps) {
     setIsLoading(true)
 
     try {
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      }
+      
+      if (user) {
+        headers['x-user-id'] = user.id || ''
+        headers['x-user-name'] = user.name || ''
+        headers['x-user-email'] = user.email || ''
+      }
+      
       const response = await fetch('/api/chat', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify({
           messages: [...messages, userMessage].map(m => ({
             role: m.role,
@@ -130,13 +198,18 @@ export function ChatInterface({ conversationId }: ChatInterfaceProps) {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.length === 0 && (
+        {isLoadingMessages ? (
+          <div className="flex items-center justify-center mt-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+            <span className="ml-2 text-gray-500">加载消息中...</span>
+          </div>
+        ) : messages.length === 0 ? (
           <div className="text-center text-gray-500 mt-8">
             <h3 className="text-lg font-semibold mb-2">欢迎来到生物论文学习助手！</h3>
             <p>我是您的生物学导师，专门帮助高中生理解医学文献。</p>
             <p>您可以上传PDF论文，或直接提问关于细胞生物学的问题。</p>
           </div>
-        )}
+        ) : null}
 
         {messages.map((message, index) => (
           <div
@@ -158,7 +231,7 @@ export function ChatInterface({ conversationId }: ChatInterfaceProps) {
                 <p className="whitespace-pre-wrap">{message.content}</p>
               )}
               <div className="text-xs opacity-70 mt-2">
-                {message.timestamp.toLocaleTimeString()}
+                {new Date(message.timestamp).toLocaleTimeString()}
               </div>
             </div>
           </div>
